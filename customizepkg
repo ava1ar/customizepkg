@@ -1,0 +1,173 @@
+#!/bin/bash
+ver=0.6.1
+#
+# customizepkg => modify PKGBUILD before building
+# <wain@archlinux.fr>
+# <mail@ava1ar.info>
+#
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+
+NAME=`basename $0`
+CONFIGDIR="/etc/$NAME.d"
+
+usage() {
+   echo "$NAME - version $ver"
+   echo
+   echo "Without any option, $NAME read PKGBUILD in current directory and show a diff between original PKGBUILD and customized PKGBUILD."
+   echo "$NAME read configuration in /etc/customizepkg.d/\$pkgname file"
+   echo
+   echo "usage: $NAME <option>"
+   echo
+   echo "$NAMCUSTOMIZEE --version, -V       shows version"
+   echo "$NAME --help,    -h       shows this help"
+   echo "$NAME --modify,  -m       apply the modification in PKGBUILD file"
+   echo "$NAME --vimdiff, -v       show diff between customised file and original file with vimdiff"
+   echo
+   echo "see /etc/customizepkg.d/mplayer.example for example"
+   echo
+   echo "originally written by <wain@archlinux.fr>"
+   echo " homepage: http://archlinux.fr/"
+   echo "rewritten by Aliaksandr Stelmachonak <mail.avatar@gmail.com>"
+   echo "contributors: Stefan Husmann <stefan-husmann@t-online.de>"
+}
+
+version() {
+   echo "$NAME - version $ver"
+   exit 0
+}
+
+modify_file()
+{
+	configfile=$1
+	originalscriptfile=$2
+	scriptfile=$3
+	grep --invert-match "\(^#\|^$\)" $configfile |
+	while read line; do
+		unset action context pattern value
+		action=$(echo $line | awk -F# '{ print $1 }')
+		context=$(echo $line | awk -F# '{ print $2 }')
+		pattern=$(echo $line | awk -F# '{ print $3 }')
+		case $action in
+			remove|replace)
+				value=`echo $line | awk -F [^#]# '{print $4}'`
+				echo "=> removes/replaces '$pattern' by '$value' in $context"
+				if [ "$action" = "replace" -a "$context" != "global" ]; then
+					#value=" '$(echo $value | tr -d "\'")' "
+					value="$(echo $value | tr -d "\'")"
+				fi
+				if [ "$context" = "global" ]; then
+					sed -i "s+$pattern+$value+g" "$scriptfile"
+				else
+					pattern="$pattern[<>=]*[a-z0-9.{$}]*"
+					if [ "$action" = "replace" ]; then
+						sed -i "/^$context=/,/)$/ s+$pattern+$value+g" "$scriptfile"
+					else
+						#echo "pattern=$pattern"
+						sed -i "/^$context=/,/)$/ s+['\"][[:blank:]]*\b$pattern[[:blank:]]*['\"]+$value+g" "$scriptfile"
+					fi
+				fi
+				;;
+			add)
+				value=" \"$(echo $pattern | tr -d "\'")\""
+				echo "=> adds $value in $context"
+				# add the full line if it doesn't exist or just the value
+				if grep --quiet "^$context=" "$scriptfile"; then
+					sed -i "s+^$context=(+&$value +1" "$scriptfile"
+				else
+					sed -i "/^pkgname/i$context=($value)\n" "$scriptfile"
+				fi
+				;;
+			*)
+				echo "error: unknow action '$action'"
+				;;
+		esac
+	done
+	[ $VIMDIFF -eq 1 ] && vim -d "$scriptfile" "$originalscriptfile"
+	diff -Naur "$originalscriptfile" "$scriptfile"
+	return 0
+}
+
+########################
+# Main Program
+VIMDIFF=0
+MODIFY=0
+while [ "$#" -ne "0" ]; do
+	case $1 in
+		-h|--help)
+			usage
+			exit 0
+			;;
+		--version|-V) version;;
+		-m|--modify)
+			MODIFY=1
+			;;
+		--vimdiff|-v)
+			VIMDIFF=1
+			;;
+	esac
+	shift
+done
+
+if [ ! -r ./PKGBUILD ]; then
+	echo "PKGBUILD not found"
+	exit 1
+fi
+
+# creating copy of pkgname string into temporary file
+$( grep "pkg.*=" ./PKGBUILD > ./PKGBUILD.pkgname )
+# and sourcing it instead of whole PKGBUILD (since it may contains errors)
+source ./PKGBUILD.pkgname 2> /dev/null
+
+for package in "${pkgname[@]}"
+do
+	if [ ! -r "$CONFIGDIR/$package" ]; then
+		echo "no configuration found for $package in $CONFIGDIR/"
+		continue
+	else
+		cp $CONFIGDIR/$package  ./$package.customize
+	fi
+
+	#adding new files current dir from  $CONFIGDIR/$package folder and including them to PKGBUILD
+	if [ -d  "$CONFIGDIR/${package}.files" ]; then
+		echo "files from $CONFIGDIR/${package}.files will be included into package "
+		for filename in $(ls $CONFIGDIR/${package}.files); do
+			echo -e "${filename}... \c"
+			cp -s "$CONFIGDIR/${package}.files/$filename" . 2> /dev/null
+			if [[ $? -eq 0 ]];
+				then 
+					echo -e "\nadd#source#${filename}" >> ./$package.customize
+					echo "add#md5sums#$(md5sum < ./${filename} | awk -F' ' '{print $1}')" >> ./$package.customize
+					echo "included"
+				else
+					echo "already exists. Skipping..."
+			fi
+			if [ $MODIFY -eq 0 ]; then
+				rm ./$filename
+			fi
+		done 
+	fi
+
+	#TODO: PKGBUILD + file.install
+	cp ./PKGBUILD ./PKGBUILD.custom
+	modify_file "./$package.customize" "./PKGBUILD" "./PKGBUILD.custom" || exit 1
+	if [ $MODIFY -eq 1 ]; then
+		cp ./PKGBUILD ./PKGBUILD.original
+		cp ./PKGBUILD.custom ./PKGBUILD
+	else rm ./PKGBUILD.custom
+	fi
+	rm -f ./$package.customize
+done
+
+# removing temporary file
+rm -f ./PKGBUILD.pkgname
+
+exit 0

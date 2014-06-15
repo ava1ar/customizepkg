@@ -1,0 +1,20 @@
+# This is an example of config file for customizepkg
+#  Copy this file in /etc/customizepkg.d/qt to use it
+#
+# syntax works like this:
+#ACTION CONTEXT PATTERN VALUE 
+#
+#Action can be: remove, add or replace
+#Context can be: depends, conflicts, makedepends etc.. or global for matching regexp in the all PKGBUILD
+#Pattern can be any rexgexp 
+#Value (optionnal) can be any string 
+#
+
+
+#ACTION CONTEXT PATTERN VALUE 
+remove#makedepends#mysql
+remove#makedepends#postgresql
+remove#makedepends#sqlite3
+remove#makedepends#unixodbc
+
+

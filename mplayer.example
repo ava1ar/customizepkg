@@ -1,0 +1,25 @@
+# This is an example of config file for customizepkg
+#  Copy this file in /etc/customizepkg.d/mplayer to use it
+#
+# syntax works like this:
+#ACTION CONTEXT PATTERN VALUE 
+#
+#Action can be: remove, add or replace
+#Context can be: depends, conflicts, makedepends etc.. or global for matching regexp in the all PKGBUILD
+#Pattern can be any rexgexp 
+#Value (optionnal) can be any string 
+#
+remove#depends#smbclient
+remove#depends#dbus-glib
+remove#depends#jack-audio-connection-kit
+remove#depends#aalib
+remove#makedepends#lirc-utils
+remove#makedepends#libcaca
+add#conflicts#mplayer-svn
+remove#global#--enable-tv-v4l[0-9]
+remove#global#--enable-runtime-cpudetection
+replace#global#--enable-smb#--disable-smb
+replace#global#--enable-lirc#--disable-lirc
+replace#global#--enable-aa#--disable-aa
+replace#global#--language=all#--language=fr
+
