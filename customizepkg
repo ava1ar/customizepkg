@@ -1,10 +1,6 @@
 #!/bin/bash
-ver=0.6.1
 #
 # customizepkg => modify PKGBUILD before building
-# <wain@archlinux.fr>
-# <mail@ava1ar.info>
-#
 #
 #   This program is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,14 +16,11 @@ NAME=`basename $0`
 CONFIGDIR="/etc/$NAME.d"
 
 usage() {
-   echo "$NAME - version $ver"
-   echo
    echo "Without any option, $NAME read PKGBUILD in current directory and show a diff between original PKGBUILD and customized PKGBUILD."
    echo "$NAME read configuration in /etc/customizepkg.d/\$pkgname file"
    echo
    echo "usage: $NAME <option>"
    echo
-   echo "$NAMCUSTOMIZEE --version, -V       shows version"
    echo "$NAME --help,    -h       shows this help"
    echo "$NAME --modify,  -m       apply the modification in PKGBUILD file"
    echo "$NAME --vimdiff, -v       show diff between customised file and original file with vimdiff"
@@ -35,14 +28,7 @@ usage() {
    echo "see /etc/customizepkg.d/mplayer.example for example"
    echo
    echo "originally written by <wain@archlinux.fr>"
-   echo " homepage: http://archlinux.fr/"
-   echo "rewritten by Aliaksandr Stelmachonak <mail.avatar@gmail.com>"
-   echo "contributors: Stefan Husmann <stefan-husmann@t-online.de>"
-}
-
-version() {
-   echo "$NAME - version $ver"
-   exit 0
+   echo "homepage: http://archlinux.fr/"
 }
 
 modify_file()
@@ -61,7 +47,6 @@ modify_file()
 				value=`echo $line | awk -F [^#]# '{print $4}'`
 				echo "=> removes/replaces '$pattern' by '$value' in $context"
 				if [ "$action" = "replace" -a "$context" != "global" ]; then
-					#value=" '$(echo $value | tr -d "\'")' "
 					value="$(echo $value | tr -d "\'")"
 				fi
 				if [ "$context" = "global" ]; then
@@ -71,7 +56,6 @@ modify_file()
 					if [ "$action" = "replace" ]; then
 						sed -i "/^$context=/,/)$/ s+$pattern+$value+g" "$scriptfile"
 					else
-						#echo "pattern=$pattern"
 						sed -i "/^$context=/,/)$/ s+['\"][[:blank:]]*\b$pattern[[:blank:]]*['\"]+$value+g" "$scriptfile"
 					fi
 				fi
