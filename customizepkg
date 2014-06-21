@@ -119,12 +119,14 @@ do
 		continue
 	fi
 
-	#adding new files current dir from  $CONFIGDIR/$package folder and including them to PKGBUILD
-	if [ -d  "$CONFIGDIR/${package}.files" ]; then
-		echo "files from $CONFIGDIR/${package}.files will be included into package "
-		for filename in $(ls $CONFIGDIR/${package}.files); do
+	[[ -d  "$LOCALCONFIGDIR/${package}.files" ]] && CFGDIR=$LOCALCONFIGDIR || CFGDIR=$CONFIGDIR
+	#adding new files current dir from  $CFGDIR/$package folder and including them to PKGBUILD
+	if [ -d  "$CFGDIR/${package}.files" ]; then
+		echo "files from $CFGDIR/${package}.files will be included into package "
+		for filepath in $CFGDIR/${package}.files/*; do
+			filename=$(basename $filepath)
 			echo -e "${filename}... \c"
-			cp "$CONFIGDIR/${package}.files/$filename" . 2> /dev/null
+			cp "$filepath" ./$filename #2> /dev/null
 			if [[ $? -eq 0 ]];
 				then
 					echo -e "\nadd#source#${filename}" >> ./$package.customize
