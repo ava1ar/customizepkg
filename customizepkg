@@ -50,11 +50,13 @@ modify_file()
 				if [ "$context" = "global" ]; then
 					sed -i "s+$pattern+$value+g" "$scriptfile"
 				else
-					pattern="$pattern[<>=]*[a-z0-9.{$}]*[' ]"
+					pattern="$pattern[<>=]*[a-z0-9.{$}]*[\"' ]"
 					if [ "$action" = "replace" ]; then
-						sed -i "/^$context=/,/)$/ s+$pattern+$value+g" "$scriptfile"
+						[[ $context == "build" ]] || [[ $context == "prepare" ]] || [[ $context == "package" ]] &&
+							sed -i "/^$context() {/,/}$/ s+$pattern+$value+g" "$scriptfile" ||
+							sed -i "/^$context=/,/)$/ s+$pattern+$value+g" "$scriptfile"
 					else
-						sed -i "/^$context=/,/)$/ s+[[:blank:]]*[']*${pattern}[']*+$value +g" "$scriptfile"
+						sed -i "/^$context=/,/)$/ s+[[:blank:]]*['\"]*${pattern}['\"]*+$value +g" "$scriptfile"
 					fi
 				fi
 				;;
@@ -68,6 +70,15 @@ modify_file()
 					sed -i "/^pkgname/i$context=($value)\n" "$scriptfile"
 				fi
 				;;
+			removeline)
+				echo "=> remove whole line containing '$pattern' in $context"
+				if [ "$context" = "global" ]; then
+					sed -i "/$pattern/d" "$scriptfile"
+				else
+					pattern="$pattern[<>=]*[a-z0-9.{$}]"
+					sed -i "/^$context() {/,/}$/ { /$pattern/d }" "$scriptfile"
+				fi
+				;;
 			*)
 				echo "error: unknown action '$action'"
 				;;
@@ -76,6 +87,20 @@ modify_file()
 	[ $VIMDIFF -eq 1 ] && vim -d "$scriptfile" "$originalscriptfile"
 	diff -Naur "$originalscriptfile" "$scriptfile"
 	return 0
+}
+
+eval_script()
+{
+	configfile=$1
+	originalscriptfile=$2
+	scriptfile=$3
+
+	if [ -x "$configfile" ]; then
+		echo "=> $configfile is executable, so treating it as a script instead of config"
+		"$configfile" "$originalscriptfile" "$scriptfile" || exit 1
+	else
+		cp $configfile ./$package.customize
+	fi
 }
 
 ########################
@@ -109,14 +134,15 @@ eval $(grep -e '^[[:blank:]]*pkg.*=' ./PKGBUILD)
 
 for package in "${pkgname[@]}"
 do
+	# local user prefs take priority
 	if [ -r "$LOCALCONFIGDIR/$package" ]; then
-		cp $LOCALCONFIGDIR/$package ./$package.customize
-	elif [ -r "$CONFIGDIR/$package" ]; then
-		cp $CONFIGDIR/$package ./$package.customize
-	else
+		CONFIGDIR=$LOCALCONFIGDIR
+	elif [ ! -r "$CONFIGDIR/$package" ]; then
 		echo "no configuration found for $package in $LOCALCONFIGDIR/ or $CONFIGDIR/"
 		continue
 	fi
+
+	eval_script "$CONFIGDIR/$package" "./PKGBUILD" "./PKGBUILD.custom"
 
 	[[ -d  "$LOCALCONFIGDIR/${package}.files" ]] && CFGDIR=$LOCALCONFIGDIR || CFGDIR=$CONFIGDIR
 	#adding new files current dir from  $CFGDIR/$package folder and including them to PKGBUILD
