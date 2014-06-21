@@ -54,7 +54,6 @@ modify_file()
 						sed -i "/^$context=/,/)$/ s+$pattern+$value+g" "$scriptfile"
 					else
 						sed -i "/^$context=/,/)$/ s+[[:blank:]]*[']*${pattern}[']*+$value +g" "$scriptfile"
-						#sed -i "/^$context=/,/)$/ s+[[:blank:]]*[']${pattern}[']+$value+g" "$scriptfile"
 					fi
 				fi
 				;;
