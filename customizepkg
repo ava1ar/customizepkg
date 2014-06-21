@@ -125,9 +125,9 @@ do
 		echo "files from $CONFIGDIR/${package}.files will be included into package "
 		for filename in $(ls $CONFIGDIR/${package}.files); do
 			echo -e "${filename}... \c"
-			cp -s "$CONFIGDIR/${package}.files/$filename" . 2> /dev/null
+			cp "$CONFIGDIR/${package}.files/$filename" . 2> /dev/null
 			if [[ $? -eq 0 ]];
-				then 
+				then
 					echo -e "\nadd#source#${filename}" >> ./$package.customize
 					echo "add#md5sums#$(md5sum < ./${filename} | awk -F' ' '{print $1}')" >> ./$package.customize
 					echo "included"
@@ -137,7 +137,7 @@ do
 			if [ $MODIFY -eq 0 ]; then
 				rm ./$filename
 			fi
-		done 
+		done
 	fi
 
 	#TODO: PKGBUILD + file.install
