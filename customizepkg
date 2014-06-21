@@ -29,7 +29,8 @@ usage() {
    echo "see /etc/customizepkg.d/mplayer.example for example"
    echo
    echo "originally written by <wain@archlinux.fr>"
-   echo "homepage: http://archlinux.fr/"
+   echo "+ modifications by ava1ar (customizepkg-new)"
+   echo "+ modifications by Steven Honeyman"
 }
 
 modify_file()
@@ -103,10 +104,8 @@ if [ ! -r ./PKGBUILD ]; then
 	exit 1
 fi
 
-# creating copy of pkgname string into temporary file
-$( grep "pkg.*=" ./PKGBUILD > ./PKGBUILD.pkgname )
-# and sourcing it instead of whole PKGBUILD (since it may contains errors)
-source ./PKGBUILD.pkgname 2> /dev/null
+# use eval instead of creating a temp file to get pkgname etc
+eval $(grep -e '^[[:blank:]]*pkg.*=' ./PKGBUILD)
 
 for package in "${pkgname[@]}"
 do
@@ -126,7 +125,7 @@ do
 		for filepath in $CFGDIR/${package}.files/*; do
 			filename=$(basename $filepath)
 			echo -e "${filename}... \c"
-			cp "$filepath" ./$filename #2> /dev/null
+			cp "$filepath" ./$filename 2> /dev/null
 			if [[ $? -eq 0 ]];
 				then
 					echo -e "\nadd#source#${filename}" >> ./$package.customize
@@ -151,8 +150,5 @@ do
 	fi
 	rm -f ./$package.customize
 done
-
-# removing temporary file
-rm -f ./PKGBUILD.pkgname
 
 exit 0
