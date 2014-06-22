@@ -12,7 +12,7 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-NAME=`basename $0`
+NAME=$(basename $0)
 CONFIGDIR="/etc/${NAME}.d"
 LOCALCONFIGDIR="${HOME}/.${NAME}"
 
@@ -118,7 +118,7 @@ while [ "$#" -ne "0" ]; do
 			MODIFY=1
 			;;
 		--vimdiff|-v)
-			VIMDIFF=1
+			[[ $(type -p vim) ]] && VIMDIFF=1 || echo 'vim was not found'
 			;;
 	esac
 	shift
@@ -148,8 +148,8 @@ do
 	#adding new files current dir from  ${CFGDIR}/${package} folder and including them to PKGBUILD
 	if [ -d  "${CFGDIR}/${package}.files" ]; then
 		# find checksum type used in PKGBUILD and utility to calculate the sum for added files
-		checksum_context=$(grep -m 1 "^[a-z]*[0-9]*sums" "./PKGBUILD" | cut -d= -f1)
-		checksum_utility=$(echo ${checksum_context%?})
+		checksum_context=$(grep -om 1 "^[a-z]*[0-9]*sums" "./PKGBUILD")
+		checksum_utility=${checksum_context%?}
 		echo "=> files from ${CFGDIR}/${package}.files will be included into package "
 		for filepath in ${CFGDIR}/${package}.files/*; do
 			if [[ -f ${filepath} ]]; then
@@ -158,8 +158,8 @@ do
 				cp "${filepath}" ./${filename} 2> /dev/null
 				if [[ $? -eq 0 ]];
 					then
-						echo -e "\nadd#source#${filename}" >> ./${package}.customize
-						echo "add#${checksum_context}#$(${checksum_utility} < ./${filename} | awk -F' ' '{print $1}')" >> ./${package}.customize
+						echo "add#source#${filename}" >> ./${package}.customize
+						echo "add#${checksum_context}#$(${checksum_utility} < ./${filename} | cut -d" " -f1)" >> ./${package}.customize
 						echo "included"
 					else
 						echo "already exists. Skipping..."
