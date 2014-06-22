@@ -17,7 +17,8 @@ CONFIGDIR="/etc/${NAME}.d"
 LOCALCONFIGDIR="${HOME}/.${NAME}"
 
 usage() {
-   echo -e 	" usage: ${NAME} <option>\n" \
+   echo -e	"A tool for Arch Linux to modify PKGBUILDs automatically.\n\n" \
+			"usage: ${NAME} <option>\n" \
 			"\n" \
 			"${NAME}                shows a diff of changes that would be made\n" \
 			"${NAME} --help,    -h  shows this help\n" \
