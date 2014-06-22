@@ -18,7 +18,7 @@ LOCALCONFIGDIR="${HOME}/.${NAME}"
 
 usage() {
    echo "Without any option, ${NAME} read PKGBUILD in current directory and show a diff between original PKGBUILD and customized PKGBUILD."
-   echo "${NAME} read configuration in ~/.customizepkg/\${pkgname} or /etc/customizepkg.d/\${pkgname} file"
+   echo "${NAME} read configuration in ~/.${NAME}/\${pkgname} or /etc/${NAME}.d/\${pkgname} file"
    echo
    echo "usage: ${NAME} <option>"
    echo
@@ -26,7 +26,7 @@ usage() {
    echo "${NAME} --modify,  -m       apply the modification in PKGBUILD file"
    echo "${NAME} --vimdiff, -v       show diff between customised file and original file with vimdiff"
    echo
-   echo "see /etc/customizepkg.d/mplayer.example for example"
+   echo "see /etc/${NAME}.d/mplayer.example for example"
    echo
    echo "originally written by <wain@archlinux.fr>"
    echo "+ modifications by ava1ar (customizepkg-new)"
