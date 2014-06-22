@@ -12,25 +12,26 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-NAME=`basename $0`
+NAME=$(basename $0)
 CONFIGDIR="/etc/${NAME}.d"
 LOCALCONFIGDIR="${HOME}/.${NAME}"
 
 usage() {
-   echo "Without any option, ${NAME} read PKGBUILD in current directory and show a diff between original PKGBUILD and customized PKGBUILD."
-   echo "${NAME} read configuration in ~/.customizepkg/\${pkgname} or /etc/customizepkg.d/\${pkgname} file"
-   echo
-   echo "usage: ${NAME} <option>"
-   echo
-   echo "${NAME} --help,    -h       shows this help"
-   echo "${NAME} --modify,  -m       apply the modification in PKGBUILD file"
-   echo "${NAME} --vimdiff, -v       show diff between customised file and original file with vimdiff"
-   echo
-   echo "see /etc/customizepkg.d/mplayer.example for example"
-   echo
-   echo "originally written by <wain@archlinux.fr>"
-   echo "+ modifications by ava1ar (customizepkg-new)"
-   echo "+ modifications by Steven Honeyman"
+   echo -e	"A tool for Arch Linux to modify PKGBUILDs automatically.\n\n" \
+			"usage: ${NAME} <option>\n" \
+			"\n" \
+			"${NAME}                shows a diff of changes that would be made\n" \
+			"${NAME} --help,    -h  shows this help\n" \
+			"${NAME} --modify,  -m  apply the modification in PKGBUILD file\n" \
+			"${NAME} --vimdiff, -v  show diff between customised file and\n" \
+			"                            original file with vimdiff\n" \
+			"\n" \
+			"configuration is read from:\n ~/.${NAME}/\${pkgname} or /etc/${NAME}.d/\${pkgname}\n" \
+			"(see /etc/${NAME}.d/mplayer.example as an example)\n" \
+			"\n" \
+			"originally written by <wain@archlinux.fr>\n" \
+			"+ modifications by ava1ar (customizepkg-new)\n" \
+			"+ modifications by Steven Honeyman\n"
 }
 
 modify_file()
@@ -80,7 +81,7 @@ modify_file()
 				fi
 				;;
 			*)
-				echo "error: unknown action '${action}'"
+				echo "error: unknown action '${action}'" 1>&2
 				;;
 		esac
 	done
@@ -118,14 +119,14 @@ while [ "$#" -ne "0" ]; do
 			MODIFY=1
 			;;
 		--vimdiff|-v)
-			VIMDIFF=1
+			[[ $(type -p vim) ]] && VIMDIFF=1 || echo 'vim was not found' 1>&2
 			;;
 	esac
 	shift
 done
 
 if [ ! -r ./PKGBUILD ]; then
-	echo "PKGBUILD not found"
+	echo 'PKGBUILD not found' 1>&2
 	exit 1
 fi
 
@@ -148,8 +149,8 @@ do
 	#adding new files current dir from  ${CFGDIR}/${package} folder and including them to PKGBUILD
 	if [ -d  "${CFGDIR}/${package}.files" ]; then
 		# find checksum type used in PKGBUILD and utility to calculate the sum for added files
-		checksum_context=$(grep -m 1 "^[a-z]*[0-9]*sums" "./PKGBUILD" | cut -d= -f1)
-		checksum_utility=$(echo ${checksum_context%?})
+		checksum_context=$(grep -om 1 "^[a-z]*[0-9]*sums" "./PKGBUILD")
+		checksum_utility=${checksum_context%?}
 		echo "=> files from ${CFGDIR}/${package}.files will be included into package "
 		for filepath in ${CFGDIR}/${package}.files/*; do
 			if [[ -f ${filepath} ]]; then
@@ -158,11 +159,11 @@ do
 				cp "${filepath}" ./${filename} 2> /dev/null
 				if [[ $? -eq 0 ]];
 					then
-						echo -e "\nadd#source#${filename}" >> ./${package}.customize
-						echo "add#${checksum_context}#$(${checksum_utility} < ./${filename} | awk -F' ' '{print $1}')" >> ./${package}.customize
-						echo "included"
+						echo "add#source#${filename}" >> ./${package}.customize
+						echo "add#${checksum_context}#$(${checksum_utility} < ./${filename} | cut -d" " -f1)" >> ./${package}.customize
+						echo 'included'
 					else
-						echo "already exists. Skipping..."
+						echo 'already exists. Skipping...'
 				fi
 				if [ ${MODIFY} -eq 0 ]; then
 					rm ./${filename}
