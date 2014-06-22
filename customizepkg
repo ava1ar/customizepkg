@@ -51,7 +51,7 @@ modify_file()
 				if [ "${context}" = "global" ]; then
 					sed -i "s+${pattern}+${value}+g" "${scriptfile}"
 				else
-					pattern="${pattern}[<>=]*[a-z0-9.{$}]*[\"' ]"
+					pattern="${pattern}[<>=]*[a-z0-9.{$}]*"      # [\"' ] removed from the end -- need to fix!
 					if [ "${action}" = "replace" ]; then
 						[[ ${context} == "build" ]] || [[ ${context} == "prepare" ]] || [[ ${context} == "package" ]] &&
 							sed -i "/^${context}() {/,/}$/ s+${pattern}+${value}+g" "${scriptfile}" ||
