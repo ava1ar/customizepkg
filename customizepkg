@@ -13,18 +13,18 @@
 #
 
 NAME=`basename $0`
-CONFIGDIR="/etc/$NAME.d"
-LOCALCONFIGDIR="$HOME/.$NAME"
+CONFIGDIR="/etc/${NAME}.d"
+LOCALCONFIGDIR="${HOME}/.${NAME}"
 
 usage() {
-   echo "Without any option, $NAME read PKGBUILD in current directory and show a diff between original PKGBUILD and customized PKGBUILD."
-   echo "$NAME read configuration in /etc/customizepkg.d/\$pkgname file"
+   echo "Without any option, ${NAME} read PKGBUILD in current directory and show a diff between original PKGBUILD and customized PKGBUILD."
+   echo "${NAME} read configuration in ~/.customizepkg/\${pkgname} or /etc/customizepkg.d/\${pkgname} file"
    echo
-   echo "usage: $NAME <option>"
+   echo "usage: ${NAME} <option>"
    echo
-   echo "$NAME --help,    -h       shows this help"
-   echo "$NAME --modify,  -m       apply the modification in PKGBUILD file"
-   echo "$NAME --vimdiff, -v       show diff between customised file and original file with vimdiff"
+   echo "${NAME} --help,    -h       shows this help"
+   echo "${NAME} --modify,  -m       apply the modification in PKGBUILD file"
+   echo "${NAME} --vimdiff, -v       show diff between customised file and original file with vimdiff"
    echo
    echo "see /etc/customizepkg.d/mplayer.example for example"
    echo
@@ -39,53 +39,53 @@ modify_file()
 	originalscriptfile=$2
 	scriptfile=$3
 
-	grep --invert-match "\(^#\|^$\)" $configfile |
+	grep --invert-match "\(^#\|^$\)" ${configfile} |
 	while IFS='#' read -r action context pattern value; do
-		case $action in
+		case ${action} in
 			remove|replace)
-				[[ $action == remove ]] && echo "=> removes '$pattern' in $context" || echo "=> replaces '$pattern' with '$value' in $context"
-				if [ "$action" = "replace" -a "$context" != "global" ]; then
-					value="$(echo $value | tr -d "\'")"
+				[[ ${action} == remove ]] && echo "=> removes '${pattern}' in ${context}" || echo "=> replaces '${pattern}' with '${value}' in ${context}"
+				if [ "${action}" = "replace" -a "${context}" != "global" ]; then
+					value="$(echo ${value} | tr -d "\'")"
 				fi
-				if [ "$context" = "global" ]; then
-					sed -i "s+$pattern+$value+g" "$scriptfile"
+				if [ "${context}" = "global" ]; then
+					sed -i "s+${pattern}+${value}+g" "${scriptfile}"
 				else
-					pattern="$pattern[<>=]*[a-z0-9.{$}]*[\"' ]"
-					if [ "$action" = "replace" ]; then
-						[[ $context == "build" ]] || [[ $context == "prepare" ]] || [[ $context == "package" ]] &&
-							sed -i "/^$context() {/,/}$/ s+$pattern+$value+g" "$scriptfile" ||
-							sed -i "/^$context=/,/)$/ s+$pattern+$value+g" "$scriptfile"
+					pattern="${pattern}[<>=]*[a-z0-9.{$}]*[\"' ]"
+					if [ "${action}" = "replace" ]; then
+						[[ ${context} == "build" ]] || [[ ${context} == "prepare" ]] || [[ ${context} == "package" ]] &&
+							sed -i "/^${context}() {/,/}$/ s+${pattern}+${value}+g" "${scriptfile}" ||
+							sed -i "/^${context}=/,/)$/ s+${pattern}+${value}+g" "${scriptfile}"
 					else
-						sed -i "/^$context=/,/)$/ s+[[:blank:]]*['\"]*${pattern}['\"]*+$value +g" "$scriptfile"
+						sed -i "/^${context}=/,/)$/ s+[[:blank:]]*['\"]*${pattern}['\"]*+${value} +g" "${scriptfile}"
 					fi
 				fi
 				;;
 			removeline)
-				echo "=> remove whole line containing '$pattern' in $context"
-				if [ "$context" = "global" ]; then
-					sed -i "/$pattern/d" "$scriptfile"
+				echo "=> remove whole line containing '${pattern}' in ${context}"
+				if [ "${context}" = "global" ]; then
+					sed -i "/${pattern}/d" "${scriptfile}"
 				else
-					pattern="$pattern[<>=]*[a-z0-9.{$}]"
-					sed -i "/^$context() {/,/}$/ { /$pattern/d }" "$scriptfile"
+					pattern="${pattern}[<>=]*[a-z0-9.{$}]"
+					sed -i "/^${context}() {/,/}$/ { /${pattern}/d }" "${scriptfile}"
 				fi
 				;;
 			add)
-				value="'$(echo $pattern | tr -d "\'")'"
-				echo "=> adds $value in $context"
+				value="'$(echo ${pattern} | tr -d "\'")'"
+				echo "=> adds ${value} in ${context}"
 				# add the full line if it doesn't exist or just the value
-				if grep --quiet "^$context=" "$scriptfile"; then
-					sed -i "s+^$context=(+&$value +1" "$scriptfile"
+				if grep --quiet "^${context}=" "${scriptfile}"; then
+					sed -i "s+^${context}=(+&${value} +1" "${scriptfile}"
 				else
-					sed -i "/^pkgname/i$context=($value)\n" "$scriptfile"
+					sed -i "/^pkgname/i${context}=(${value})\n" "${scriptfile}"
 				fi
 				;;
 			*)
-				echo "error: unknown action '$action'"
+				echo "error: unknown action '${action}'"
 				;;
 		esac
 	done
-	[ $VIMDIFF -eq 1 ] && vim -d "$scriptfile" "$originalscriptfile"
-	diff -Naur "$originalscriptfile" "$scriptfile"
+	[ ${VIMDIFF} -eq 1 ] && vim -d "${scriptfile}" "${originalscriptfile}"
+	diff -Naur "${originalscriptfile}" "${scriptfile}"
 	return 0
 }
 
@@ -95,11 +95,11 @@ eval_script()
 	originalscriptfile=$2
 	scriptfile=$3
 
-	if [ -x "$configfile" ]; then
-		echo "=> $configfile is executable, so treating it as a script instead of config"
-		"$configfile" "$originalscriptfile" "$scriptfile" || exit 1
+	if [ -x "${configfile}" ]; then
+		echo "=> ${configfile} is executable, so treating it as a script instead of config"
+		"${configfile}" "${originalscriptfile}" "${scriptfile}" || exit 1
 	else
-		cp $configfile ./$package.customize
+		cp ${configfile} ./${package}.customize
 	fi
 }
 
@@ -135,36 +135,36 @@ eval $(grep -e '^[[:blank:]]*pkg.*=' ./PKGBUILD)
 for package in "${pkgname[@]}"
 do
 	# local user prefs take priority
-	if [ -r "$LOCALCONFIGDIR/$package" ]; then
-		CONFIGDIR=$LOCALCONFIGDIR
-	elif [ ! -r "$CONFIGDIR/$package" ]; then
-		echo "no configuration found for $package in $LOCALCONFIGDIR/ or $CONFIGDIR/"
+	if [ -r "${LOCALCONFIGDIR}/${package}" ]; then
+		CONFIGDIR=${LOCALCONFIGDIR}
+	elif [ ! -r "${CONFIGDIR}/${package}" ]; then
+		echo "no configuration found for ${package} in ${LOCALCONFIGDIR}/ or ${CONFIGDIR}/"
 		continue
 	fi
 
-	eval_script "$CONFIGDIR/$package" "./PKGBUILD" "./PKGBUILD.custom"
+	eval_script "${CONFIGDIR}/${package}" "./PKGBUILD" "./PKGBUILD.custom"
 
-	[[ -d  "$LOCALCONFIGDIR/${package}.files" ]] && CFGDIR=$LOCALCONFIGDIR || CFGDIR=$CONFIGDIR
-	#adding new files current dir from  $CFGDIR/$package folder and including them to PKGBUILD
-	if [ -d  "$CFGDIR/${package}.files" ]; then
+	[[ -d  "${LOCALCONFIGDIR}/${package}.files" ]] && CFGDIR=${LOCALCONFIGDIR} || CFGDIR=${CONFIGDIR}
+	#adding new files current dir from  ${CFGDIR}/${package} folder and including them to PKGBUILD
+	if [ -d  "${CFGDIR}/${package}.files" ]; then
 		# find checksum type used in PKGBUILD and utility to calculate the sum for added files
 		checksum_context=$(grep -m 1 "^[a-z]*[0-9]*sums" "./PKGBUILD" | cut -d= -f1)
 		checksum_utility=$(echo ${checksum_context%?})
-		echo "=> files from $CFGDIR/${package}.files will be included into package "
-		for filepath in $CFGDIR/${package}.files/*; do
+		echo "=> files from ${CFGDIR}/${package}.files will be included into package "
+		for filepath in ${CFGDIR}/${package}.files/*; do
 			if [[ -f $filepath ]]; then
 				filename=$(basename $filepath)
 				echo -e "${filename}... \c"
 				cp "$filepath" ./$filename 2> /dev/null
 				if [[ $? -eq 0 ]];
 					then
-						echo -e "\nadd#source#${filename}" >> ./$package.customize
-						echo "add#$checksum_context#$($checksum_utility < ./${filename} | awk -F' ' '{print $1}')" >> ./$package.customize
+						echo -e "\nadd#source#${filename}" >> ./${package}.customize
+						echo "add#${checksum_context}#$($checksum_utility < ./${filename} | awk -F' ' '{print $1}')" >> ./${package}.customize
 						echo "included"
 					else
 						echo "already exists. Skipping..."
 				fi
-				if [ $MODIFY -eq 0 ]; then
+				if [ ${MODIFY} -eq 0 ]; then
 					rm ./$filename
 				fi
 			fi
@@ -173,13 +173,13 @@ do
 
 	#TODO: PKGBUILD + file.install
 	cp ./PKGBUILD ./PKGBUILD.custom
-	modify_file "./$package.customize" "./PKGBUILD" "./PKGBUILD.custom" || exit 1
-	if [ $MODIFY -eq 1 ]; then
+	modify_file "./${package}.customize" "./PKGBUILD" "./PKGBUILD.custom" || exit 1
+	if [ ${MODIFY} -eq 1 ]; then
 		cp ./PKGBUILD ./PKGBUILD.original
 		cp ./PKGBUILD.custom ./PKGBUILD
 	else rm ./PKGBUILD.custom
 	fi
-	rm -f ./$package.customize
+	rm -f ./${package}.customize
 done
 
 exit 0
