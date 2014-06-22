@@ -159,7 +159,7 @@ do
 				if [[ $? -eq 0 ]];
 					then
 						echo -e "\nadd#source#${filename}" >> ./${package}.customize
-						echo "add#${checksum_context}#$($checksum_utility < ./${filename} | awk -F' ' '{print $1}')" >> ./${package}.customize
+						echo "add#${checksum_context}#$(${checksum_utility} < ./${filename} | awk -F' ' '{print $1}')" >> ./${package}.customize
 						echo "included"
 					else
 						echo "already exists. Skipping..."
