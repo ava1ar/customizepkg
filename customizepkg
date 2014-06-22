@@ -60,15 +60,6 @@ modify_file()
 					fi
 				fi
 				;;
-			removeline)
-				echo "=> remove whole line containing '$pattern' in $context"
-				if [ "$context" = "global" ]; then
-					sed -i "/$pattern/d" "$scriptfile"
-				else
-					pattern="$pattern[<>=]*[a-z0-9.{$}]"
-					sed -i "/^$context() {/,/}$/ { /$pattern/d }" "$scriptfile"
-				fi
-				;;
 			add)
 				value="'$(echo $pattern | tr -d "\'")'"
 				echo "=> adds $value in $context"
@@ -77,6 +68,15 @@ modify_file()
 					sed -i "s+^$context=(+&$value +1" "$scriptfile"
 				else
 					sed -i "/^pkgname/i$context=($value)\n" "$scriptfile"
+				fi
+				;;
+			removeline)
+				echo "=> remove whole line containing '$pattern' in $context"
+				if [ "$context" = "global" ]; then
+					sed -i "/$pattern/d" "$scriptfile"
+				else
+					pattern="$pattern[<>=]*[a-z0-9.{$}]"
+					sed -i "/^$context() {/,/}$/ { /$pattern/d }" "$scriptfile"
 				fi
 				;;
 			*)
@@ -147,6 +147,9 @@ do
 	[[ -d  "$LOCALCONFIGDIR/${package}.files" ]] && CFGDIR=$LOCALCONFIGDIR || CFGDIR=$CONFIGDIR
 	#adding new files current dir from  $CFGDIR/$package folder and including them to PKGBUILD
 	if [ -d  "$CFGDIR/${package}.files" ]; then
+		# find checksum type used in PKGBUILD and utility to calculate this sum
+		checksum_context=$(grep "^[a-z]*[0-9]*sums" "./PKGBUILD" | cut -d= -f1)
+		checksum_utility=$(echo ${checksum_context%?})
 		echo "=> files from $CFGDIR/${package}.files will be included into package "
 		for filepath in $CFGDIR/${package}.files/*; do
 			if [[ -f $filepath ]]; then
@@ -156,7 +159,7 @@ do
 				if [[ $? -eq 0 ]];
 					then
 						echo -e "\nadd#source#${filename}" >> ./$package.customize
-						echo "add#md5sums#$(md5sum < ./${filename} | awk -F' ' '{print $1}')" >> ./$package.customize
+						echo "add#$checksum_context#$($checksum_utility < ./${filename} | awk -F' ' '{print $1}')" >> ./$package.customize
 						echo "included"
 					else
 						echo "already exists. Skipping..."
