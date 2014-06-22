@@ -17,20 +17,20 @@ CONFIGDIR="/etc/${NAME}.d"
 LOCALCONFIGDIR="${HOME}/.${NAME}"
 
 usage() {
-   echo "Without any option, ${NAME} read PKGBUILD in current directory and show a diff between original PKGBUILD and customized PKGBUILD."
-   echo "${NAME} read configuration in ~/.${NAME}/\${pkgname} or /etc/${NAME}.d/\${pkgname} file"
-   echo
-   echo "usage: ${NAME} <option>"
-   echo
-   echo "${NAME} --help,    -h       shows this help"
-   echo "${NAME} --modify,  -m       apply the modification in PKGBUILD file"
-   echo "${NAME} --vimdiff, -v       show diff between customised file and original file with vimdiff"
-   echo
-   echo "see /etc/${NAME}.d/mplayer.example for example"
-   echo
-   echo "originally written by <wain@archlinux.fr>"
-   echo "+ modifications by ava1ar (customizepkg-new)"
-   echo "+ modifications by Steven Honeyman"
+   echo -e 	" usage: ${NAME} <option>\n" \
+			"\n" \
+			"${NAME}                shows a diff of changes that would be made\n" \
+			"${NAME} --help,    -h  shows this help\n" \
+			"${NAME} --modify,  -m  apply the modification in PKGBUILD file\n" \
+			"${NAME} --vimdiff, -v  show diff between customised file and\n" \
+			"                            original file with vimdiff\n" \
+			"\n" \
+			"configuration is read from:\n ~/.${NAME}/\${pkgname} or /etc/${NAME}.d/\${pkgname}\n" \
+			"(see /etc/${NAME}.d/mplayer.example as an example)\n" \
+			"\n" \
+			"originally written by <wain@archlinux.fr>\n" \
+			"+ modifications by ava1ar (customizepkg-new)\n" \
+			"+ modifications by Steven Honeyman\n"
 }
 
 modify_file()
@@ -80,7 +80,7 @@ modify_file()
 				fi
 				;;
 			*)
-				echo "error: unknown action '${action}'"
+				echo "error: unknown action '${action}'" 1>&2
 				;;
 		esac
 	done
@@ -118,14 +118,14 @@ while [ "$#" -ne "0" ]; do
 			MODIFY=1
 			;;
 		--vimdiff|-v)
-			[[ $(type -p vim) ]] && VIMDIFF=1 || echo 'vim was not found'
+			[[ $(type -p vim) ]] && VIMDIFF=1 || echo 'vim was not found' 1>&2
 			;;
 	esac
 	shift
 done
 
 if [ ! -r ./PKGBUILD ]; then
-	echo "PKGBUILD not found"
+	echo 'PKGBUILD not found' 1>&2
 	exit 1
 fi
 
@@ -160,9 +160,9 @@ do
 					then
 						echo "add#source#${filename}" >> ./${package}.customize
 						echo "add#${checksum_context}#$(${checksum_utility} < ./${filename} | cut -d" " -f1)" >> ./${package}.customize
-						echo "included"
+						echo 'included'
 					else
-						echo "already exists. Skipping..."
+						echo 'already exists. Skipping...'
 				fi
 				if [ ${MODIFY} -eq 0 ]; then
 					rm ./${filename}
