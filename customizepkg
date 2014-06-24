@@ -36,9 +36,9 @@ usage() {
 
 modify_file()
 {
-	configfile=$1
-	originalscriptfile=$2
-	scriptfile=$3
+	local configfile=$1
+	local originalscriptfile=$2
+	local scriptfile=$3
 
 	grep --invert-match "\(^#\|^$\)" ${configfile} |
 	while IFS='#' read -r action context pattern value; do
@@ -86,15 +86,15 @@ modify_file()
 		esac
 	done
 	[ ${VIMDIFF} -eq 1 ] && vim -d "${scriptfile}" "${originalscriptfile}"
-	diff -ub "${originalscriptfile}" "${scriptfile}"
+	${DIFFCMD} -ub "${originalscriptfile}" "${scriptfile}"
 	return 0
 }
 
 eval_script()
 {
-	configfile=$1
-	originalscriptfile=$2
-	scriptfile=$3
+	local configfile=$1
+	local originalscriptfile=$2
+	local scriptfile=$3
 
 	if [ -x "${configfile}" ]; then
 		echo "=> ${configfile} is executable, so treating it as a script instead of config"
@@ -114,16 +114,18 @@ while [ "$#" -ne "0" ]; do
 			usage
 			exit 0
 			;;
-		--version|-V) version;;
 		-m|--modify)
 			MODIFY=1
 			;;
 		--vimdiff|-v)
-			[[ $(type -p vim) ]] && VIMDIFF=1 || echo 'vim was not found' 1>&2
+			[[ $(type -p vim) ]] && VIMDIFF=1 || echo 'WARNING: vim was not found' 1>&2
 			;;
 	esac
 	shift
 done
+
+# use colordiff if it's available
+[[ $(type -p colordiff) ]] && DIFFCMD=colordiff || DIFFCMD=diff
 
 if [ ! -r ./PKGBUILD ]; then
 	echo 'PKGBUILD not found' 1>&2
