@@ -14,6 +14,7 @@
 #
 # TODO:
 #	PKGBUILD + file.install
+#	auto patching feature
 #
 
 NAME=$(basename $0)
@@ -58,18 +59,22 @@ modify_file()
 		case ${action} in
 			remove|replace)
 				[[ ${action} == remove ]] && echo "=> removes '${pattern}' in ${context}" || echo "=> replaces '${pattern}' with '${value}' in ${context}"
+
 				if [ "${action}" = "replace" -a "${context}" != "global" ]; then
 					value="$(echo ${value} | tr -d "\'")"
 				fi
+
 				if [ "${context}" = "global" ]; then
 					sed -i "s+${pattern}+${value}+g" "${scriptfile}"
 				else
-					pattern="${pattern}[<>=]*[a-z0-9.{$}]*"
+					[[ ${context} =~ depends$ ]] && pattern="${pattern}[<>=]*\(: \|\)[a-z0-9.{$}\-]*" # only need this for makedepends/optdepends/depends
 					if [ "${action}" = "replace" ]; then
-						[[ ${context} == "build" ]] || [[ ${context} == "prepare" ]] || [[ ${context} == "package" ]] &&
-							sed -i "/^${context}() {/,/}$/ s+${pattern}+${value}+g" "${scriptfile}" ||
-							sed -i "/^${context}=/,/)$/ s+${pattern}+${value}+g" "${scriptfile}"
+						case ${context} in
+							prepare|build|package) sed -i "/^${context}() {/,/^}$/ s+${pattern}+${value}+g" "${scriptfile}" ;;
+							*) sed -i "/^${context}=/,/)$/ s+${pattern}+${value}+g" "${scriptfile}" ;;
+						esac
 					else
+						# remove the quotes if we're not replacing something
 						sed -i "/^${context}=/,/)$/ s+[[:blank:]]*['\"]*${pattern}['\"]*+${value}+g" "${scriptfile}"
 					fi
 				fi
@@ -79,7 +84,7 @@ modify_file()
 				if [ "${context}" = "global" ]; then
 					sed -i "/${pattern}/d" "${scriptfile}"
 				else
-					pattern="${pattern}[<>=]*[a-z0-9.{$}]"
+					#pattern="${pattern}[<>=]*[a-z0-9.{$}]"
 					sed -i "/^${context}() {/,/}$/ { /${pattern}/d }" "${scriptfile}"
 				fi
 				;;
