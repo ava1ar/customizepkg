@@ -51,13 +51,13 @@ modify_file()
 				if [ "${context}" = "global" ]; then
 					sed -i "s+${pattern}+${value}+g" "${scriptfile}"
 				else
-					pattern="${pattern}[<>=]*[a-z0-9.{$}]*"      # [\"' ] removed from the end -- need to fix!
+					pattern="${pattern}[<>=]*[a-z0-9.{$}]*"
 					if [ "${action}" = "replace" ]; then
 						[[ ${context} == "build" ]] || [[ ${context} == "prepare" ]] || [[ ${context} == "package" ]] &&
 							sed -i "/^${context}() {/,/}$/ s+${pattern}+${value}+g" "${scriptfile}" ||
 							sed -i "/^${context}=/,/)$/ s+${pattern}+${value}+g" "${scriptfile}"
 					else
-						sed -i "/^${context}=/,/)$/ s+[[:blank:]]*['\"]*${pattern}['\"]*+${value} +g" "${scriptfile}"
+						sed -i "/^${context}=/,/)$/ s+[[:blank:]]*['\"]*${pattern}['\"]*+${value}+g" "${scriptfile}"
 					fi
 				fi
 				;;
@@ -86,7 +86,7 @@ modify_file()
 		esac
 	done
 	[ ${VIMDIFF} -eq 1 ] && vim -d "${scriptfile}" "${originalscriptfile}"
-	diff -Naur "${originalscriptfile}" "${scriptfile}"
+	diff -ub "${originalscriptfile}" "${scriptfile}"
 	return 0
 }
 
