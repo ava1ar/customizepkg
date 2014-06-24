@@ -11,10 +11,17 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
+#
+# TODO:
+#	PKGBUILD + file.install
+#
 
 NAME=$(basename $0)
 CONFIGDIR="/etc/${NAME}.d"
 LOCALCONFIGDIR="${HOME}/.${NAME}"
+
+# use colordiff if it's available
+[[ $(type -p colordiff) ]] && DIFFCMD="colordiff -ub" || DIFFCMD="diff -ub"
 
 usage() {
    echo -e	"A tool for Arch Linux to modify PKGBUILDs automatically.\n\n" \
@@ -39,6 +46,12 @@ modify_file()
 	local configfile=$1
 	local originalscriptfile=$2
 	local scriptfile=$3
+
+	# if the customize file is executable, run it, then we're done.
+	if [ -x "${configfile}" ]; then
+		echo "=> ${configfile} is executable, so treating it as a script instead of config"
+		"${configfile}" "${originalscriptfile}" "${scriptfile}" && return 0 || exit 1
+	fi
 
 	grep --invert-match "\(^#\|^$\)" ${configfile} |
 	while IFS='#' read -r action context pattern value; do
@@ -85,28 +98,13 @@ modify_file()
 				;;
 		esac
 	done
-	[ ${VIMDIFF} -eq 1 ] && vim -d "${scriptfile}" "${originalscriptfile}"
-	${DIFFCMD} -ub "${originalscriptfile}" "${scriptfile}"
+
+	${DIFFCMD} "${originalscriptfile}" "${scriptfile}"
 	return 0
 }
 
-eval_script()
-{
-	local configfile=$1
-	local originalscriptfile=$2
-	local scriptfile=$3
+################################################
 
-	if [ -x "${configfile}" ]; then
-		echo "=> ${configfile} is executable, so treating it as a script instead of config"
-		"${configfile}" "${originalscriptfile}" "${scriptfile}" || exit 1
-	else
-		cp ${configfile} ./${package}.customize
-	fi
-}
-
-########################
-# Main Program
-VIMDIFF=0
 MODIFY=0
 while [ "$#" -ne "0" ]; do
 	case $1 in
@@ -118,14 +116,11 @@ while [ "$#" -ne "0" ]; do
 			MODIFY=1
 			;;
 		--vimdiff|-v)
-			[[ $(type -p vim) ]] && VIMDIFF=1 || echo 'WARNING: vim was not found' 1>&2
+			[[ $(type -p vim) ]] && DIFFCMD="vim -d" || echo 'WARNING: vim was not found' 1>&2
 			;;
 	esac
 	shift
 done
-
-# use colordiff if it's available
-[[ $(type -p colordiff) ]] && DIFFCMD=colordiff || DIFFCMD=diff
 
 if [ ! -r ./PKGBUILD ]; then
 	echo 'PKGBUILD not found' 1>&2
@@ -134,6 +129,9 @@ fi
 
 # use eval instead of creating a temp file to get pkgname etc
 eval $(grep -e '^[[:blank:]]*pkg.*=' ./PKGBUILD)
+
+# copy for modification
+cp ./PKGBUILD ./PKGBUILD.custom
 
 for package in "${pkgname[@]}"
 do
@@ -145,16 +143,16 @@ do
 		continue
 	fi
 
-	eval_script "${CONFIGDIR}/${package}" "./PKGBUILD" "./PKGBUILD.custom"
+	# copy the config file to current directory
+	cp "${CONFIGDIR}/${package}" "./${package}.customize"
 
-	[[ -d  "${LOCALCONFIGDIR}/${package}.files" ]] && CFGDIR=${LOCALCONFIGDIR} || CFGDIR=${CONFIGDIR}
 	#adding new files current dir from  ${CFGDIR}/${package} folder and including them to PKGBUILD
-	if [ -d  "${CFGDIR}/${package}.files" ]; then
+	if [ -d  "${CONFIGDIR}/${package}.files" ]; then
 		# find checksum type used in PKGBUILD and utility to calculate the sum for added files
 		checksum_context=$(grep -om 1 "^[a-z]*[0-9]*sums" "./PKGBUILD")
 		checksum_utility=${checksum_context%?}
-		echo "=> files from ${CFGDIR}/${package}.files will be included into package "
-		for filepath in ${CFGDIR}/${package}.files/*; do
+		echo "=> files from ${CONFIGDIR}/${package}.files will be included into package "
+		for filepath in ${CONFIGDIR}/${package}.files/*; do
 			if [[ -f ${filepath} ]]; then
 				filename=$(basename ${filepath})
 				echo -e "${filename}... \c"
@@ -174,15 +172,14 @@ do
 		done
 	fi
 
-	#TODO: PKGBUILD + file.install
-	cp ./PKGBUILD ./PKGBUILD.custom
-	modify_file "./${package}.customize" "./PKGBUILD" "./PKGBUILD.custom" || exit 1
+	# make any changes to PKGBUILD.custom
+	modify_file "./${package}.customize" "./PKGBUILD" "./PKGBUILD.custom" && rm -f "./${package}.customize" || exit 1
 	if [ ${MODIFY} -eq 1 ]; then
-		cp ./PKGBUILD ./PKGBUILD.original
-		cp ./PKGBUILD.custom ./PKGBUILD
-	else rm ./PKGBUILD.custom
+		mv ./PKGBUILD ./PKGBUILD.original
+		mv ./PKGBUILD.custom ./PKGBUILD
+	else
+		rm ./PKGBUILD.custom
 	fi
-	rm -f ./${package}.customize
 done
 
 exit 0

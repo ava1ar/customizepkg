@@ -14,12 +14,12 @@ The pacman wrapper "Yaourt" integrates with customizepkg by default
 # Configuration file Syntax: #
 
 ````
-ACTION#CONTEXT#PATTERN#VALUE 
+ACTION#CONTEXT#PATTERN#VALUE
 ````
 
 - Action can be: remove, removeline, add or replace
 - Context can be: depends, conflicts, makedepends etc.. or global for matching regexp in the whole PKGBUILD
-- Pattern can be any rexgexp 
+- Pattern can be any rexgexp
 - Value (only needed for replace) can be any string
 - Comments can be added by starting the line with `#`
 
@@ -27,3 +27,11 @@ ACTION#CONTEXT#PATTERN#VALUE
 
 You can add extra files to a PKGBUILD by placing them in `/etc/customizepkg.d/$PACKAGENAME.files/`
 They will be added automatically, including checksums
+
+# Run a script #
+
+If the configuration file has the executable flag set, it will be executed instead of parsed.
+Two parameters are passed to the script:
+
+- $1 is the original PKGBUILD
+- $2 is the custom PKGBUILD
