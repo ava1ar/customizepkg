@@ -95,7 +95,7 @@ modify_file()
 				if grep --quiet "^${context}=" "${scriptfile}"; then
 					sed -i "s+^${context}=(+&${value} +1" "${scriptfile}"
 				else
-					sed -i "/^pkgname/i${context}=(${value})\n" "${scriptfile}"
+					sed -i "/^pkgname/i${context}=(${value})" "${scriptfile}"
 				fi
 				;;
 			*)
