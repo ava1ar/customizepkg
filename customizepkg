@@ -57,26 +57,28 @@ modify_file()
 	grep --invert-match "\(^#\|^$\)" ${configfile} |
 	while IFS='#' read -r action context pattern value; do
 		case ${action} in
-			remove|replace)
-				[[ ${action} == remove ]] && echo "=> removes '${pattern}' in ${context}" || echo "=> replaces '${pattern}' with '${value}' in ${context}"
-
-				if [ "${action}" = "replace" -a "${context}" != "global" ]; then
-					value="$(echo ${value} | tr -d "\'")"
-				fi
-
+			replace)
+				echo "=> replaces '${pattern}' with '${value}' in ${context}"
 				if [ "${context}" = "global" ]; then
-					sed -i "s+${pattern}+${value}+g" "${scriptfile}"
+					sed -i "s@${pattern}@${value}@g" "${scriptfile}"
 				else
-					[[ ${context} =~ depends$ ]] && pattern="${pattern}[<>=]*\(: \|\)[a-z0-9.{$}\-]*" # only need this for makedepends/optdepends/depends
-					if [ "${action}" = "replace" ]; then
-						case ${context} in
-							prepare|build|package) sed -i "/^${context}() {/,/^}$/ s+${pattern}+${value}+g" "${scriptfile}" ;;
-							*) sed -i "/^${context}=/,/)$/ s+${pattern}+${value}+g" "${scriptfile}" ;;
-						esac
-					else
-						# remove the quotes if we're not replacing something
-						sed -i "/^${context}=/,/)$/ s+[[:blank:]]*['\"]*${pattern}['\"]*+${value}+g" "${scriptfile}"
-					fi
+					value="${value//\'}"
+					case ${context} in
+						prepare|build|package)
+							sed -i "/^${context}() {/,/^}$/ s@${pattern}@${value}@g" "${scriptfile}" ;; 	# multiline functions
+						makedepends|optdepends|depends)
+							pattern="${pattern}[<>=]*\(: \|\)[a-z0-9.{$}\-]*" ;&							# these can have version nums etc
+						*) 	sed -i "/^${context}=/,/)$/ s@${pattern}@${value}@g" "${scriptfile}" ;;
+					esac
+				fi
+				;;
+			remove)
+				echo "=> removes '${pattern}' from ${context}"
+				if [ "${context}" = "global" ]; then
+					sed -i "s@${pattern}@@g" "${scriptfile}"
+				else
+					[[ ${context} =~ depends$ ]] && pattern="${pattern}[<>=]*\(: \|\)[a-z0-9.{$}\-]*" 		# makedepends/optdepends/depends
+					sed -i "/^${context}=/,/)$/ s@[[:blank:]]*['\"]*${pattern}['\"]*@@g" "${scriptfile}" 	# junk the quotes too
 				fi
 				;;
 			removeline)
@@ -84,16 +86,15 @@ modify_file()
 				if [ "${context}" = "global" ]; then
 					sed -i "/${pattern}/d" "${scriptfile}"
 				else
-					#pattern="${pattern}[<>=]*[a-z0-9.{$}]"
 					sed -i "/^${context}() {/,/}$/ { /${pattern}/d }" "${scriptfile}"
 				fi
 				;;
 			add)
-				value="'$(echo ${pattern} | tr -d "\'")'"
+				value="'${pattern//\'}'"
 				echo "=> adds ${value} in ${context}"
 				# add the full line if it doesn't exist or just the value
 				if grep --quiet "^${context}=" "${scriptfile}"; then
-					sed -i "s+^${context}=(+&${value} +1" "${scriptfile}"
+					sed -i "s@^${context}=(@&${value} @1" "${scriptfile}"
 				else
 					sed -i "/^pkgname/i${context}=(${value})" "${scriptfile}"
 				fi
