@@ -13,9 +13,9 @@ The pacman wrapper "Yaourt" integrates with customizepkg by default
 
 # Configuration file Syntax: #
 
-````
+```
 ACTION#CONTEXT#PATTERN#VALUE
-````
+```
 
 - Action can be: remove, removeline, add or replace
 - Context can be: depends, conflicts, makedepends etc.. or global for matching regexp in the whole PKGBUILD
@@ -35,3 +35,15 @@ Two parameters are passed to the script:
 
 - $1 is the original PKGBUILD
 - $2 is the custom PKGBUILD
+
+# Patch the source #
+
+Patch files can be applied to the source code using the following syntax:
+
+```
+patch#1#/path/to/patch/file.patch
+```
+
+- The context ("1" above) is the number of leading components to strip (i.e. `patch -p1`)
+- The path cannot contain variables
+
