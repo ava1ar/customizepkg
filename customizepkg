@@ -60,25 +60,25 @@ modify_file()
 			replace)
 				echo "=> replaces '${pattern}' with '${value}' in ${context}"
 				if [ "${context}" = "global" ]; then
-					sed -i "s|${pattern}|${value}|g" "${scriptfile}"
+					sed -i "s%${pattern}%${value}%g" "${scriptfile}"
 				else
 					value="${value//\'}"
 					case ${context} in
 						prepare|build|package)
-							sed -i "/^${context}() {/,/^}$/ s|${pattern}|${value}|g" "${scriptfile}" ;; 	# multiline functions
+							sed -i "/^${context}() {/,/^}$/ s%${pattern}%${value}%g" "${scriptfile}" ;; 	# multiline functions
 						makedepends|optdepends|depends)
 							pattern="${pattern}[<>=]*\(: \|\)[a-z0-9.{$}\-]*" ;&							# these can have version nums etc
-						*) 	sed -i "/^${context}=/,/)$/ s|${pattern}|${value}|g" "${scriptfile}" ;;
+						*)	sed -i "/^${context}=/,/)$/ s%${pattern}%${value}%g" "${scriptfile}" ;;
 					esac
 				fi
 				;;
 			remove)
 				echo "=> removes '${pattern}' from ${context}"
 				if [ "${context}" = "global" ]; then
-					sed -i "s|${pattern}||g" "${scriptfile}"
+					sed -i "s%${pattern}%%g" "${scriptfile}"
 				else
-					[[ ${context} =~ depends$ ]] && pattern="${pattern}[<>=]*\(: \|\)[a-z0-9.{$}\-]*" 		# makedepends/optdepends/depends
-					sed -i "/^${context}=/,/)$/ s|[[:blank:]]*['\"]*${pattern}['\"]*||g" "${scriptfile}" 	# junk the quotes too
+					[[ ${context} =~ depends$ ]] && pattern="${pattern}[<>=]*\(: \|\)[a-z0-9.{$}\-]*"		# makedepends/optdepends/depends
+					sed -i "/^${context}=/,/)$/ s%[[:blank:]]*['\"]*${pattern}['\"]*%%g" "${scriptfile}"	# junk the quotes too
 				fi
 				;;
 			removeline)
@@ -94,7 +94,7 @@ modify_file()
 				echo "=> adds ${value} in ${context}"
 				# add the full line if it doesn't exist or just the value
 				if grep --quiet "^${context}=" "${scriptfile}"; then
-					sed -i "s|^${context}=(|&${value} |1" "${scriptfile}"
+					sed -i "s%^${context}=(%&${value} %1" "${scriptfile}"
 				else
 					sed -i "/^pkgname/i${context}=(${value})" "${scriptfile}"
 				fi
