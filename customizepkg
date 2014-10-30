@@ -145,7 +145,7 @@ if [ ! -r ./PKGBUILD ]; then
 fi
 
 # use eval instead of creating a temp file to get pkgname etc
-eval $(grep -E '^[[:blank:]]*_?(pkg.*|name)=' ./PKGBUILD | sed 's/#.*//')
+eval $(grep -Po '^[[:blank:]]*_?(pkg.*|name)=[^#]*(?= *#|$)' ./PKGBUILD)
 
 # copy for modification
 cp ./PKGBUILD ./PKGBUILD.custom
