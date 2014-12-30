@@ -7,7 +7,9 @@ A tool for Arch Linux package manager pacman to modify PKGBUILD automatically.
 
 Without any parameters, it will read ./PKGBUILD and show any modifications that would be done.
 Create config files with the same name as the package you want to modify, and place in either:
-`/etc/customizepkg.d/` or `~/.customizepkg/`
+`/etc/customizepkg.d/` or `~/.customizepkg/`. You can export the environment
+variable `$CUSTOMIZEPKG_CONFIG` to change the directory customizepkg will look
+for the config files in.
 
 The pacman wrapper "Yaourt" integrates with customizepkg by default
 
@@ -41,9 +43,9 @@ Two parameters are passed to the script:
 Patch files can be applied to the source code using the following syntax:
 
 ```
-patch#1#/path/to/patch/file.patch
+patch#1#file.patch
 ```
 
 - The context ("1" above) is the number of leading components to strip (i.e. `patch -p1`)
 - The path cannot contain variables
-
+- The patch file can be stored in the additional files directory, $PACKAGENAME.files
