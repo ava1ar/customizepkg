@@ -98,6 +98,14 @@ modify_file()
 					sed -i "/^pkgname/i${context}=(${value})" "${scriptfile}"
 				fi
 				;;
+			addline)
+				echo "=> add whole line '${value}' after ${pattern} in ${context}"
+				if [ "${context}" = "global" ]; then
+					sed -i "/${pattern}/a${value}g" "${scriptfile}"
+				else
+					sed -i "/^${context}() {/,/^}$/ s%${pattern}.*$%&\n${value}%" "${scriptfile}"
+				fi
+				;;
 			patch)
 				if [[ -f ${pattern} ]]; then
 					echo "=> apply patch ${pattern} using '-p${context}'"
