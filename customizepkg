@@ -18,7 +18,7 @@
 
 NAME=$(basename $0)
 CONFIGDIR="/etc/${NAME}.d"
-LOCALCONFIGDIR="${HOME}/.${NAME}"
+LOCALCONFIGDIR=${CUSTOMIZEPKG_CONFIG:-"${HOME}/.${NAME}"}
 
 # use colordiff if it's available
 [[ $(type -p colordiff) ]] && DIFFCMD="colordiff -ub" || DIFFCMD="diff -ub"
@@ -33,8 +33,8 @@ usage() {
 			"${NAME} --vimdiff, -v  show diff between customised file and\n" \
 			"                            original file with vimdiff\n" \
 			"\n" \
-			"configuration is read from:\n ~/.${NAME}/\${pkgname} or /etc/${NAME}.d/\${pkgname}\n" \
-			"(see /etc/${NAME}.d/mplayer.example as an example)\n" \
+			"configuration is read from:\n $LOCALCONFIGDIR/\${pkgname} or $CONFIGDIR/\${pkgname}\n" \
+			"(see $CONFIGDIR/mplayer.example as an example)\n" \
 			"\n" \
 			"originally written by <wain@archlinux.fr>\n" \
 			"+ modifications by ava1ar (customizepkg-new)\n" \
