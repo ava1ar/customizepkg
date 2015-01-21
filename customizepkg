@@ -18,7 +18,7 @@
 
 NAME=$(basename $0)
 CONFIGDIR="/etc/${NAME}.d"
-LOCALCONFIGDIR="${HOME}/.${NAME}"
+LOCALCONFIGDIR=${CUSTOMIZEPKG_CONFIG:-"${HOME}/.${NAME}"}
 
 # use colordiff if it's available
 [[ $(type -p colordiff) ]] && DIFFCMD="colordiff -ub" || DIFFCMD="diff -ub"
@@ -33,8 +33,8 @@ usage() {
 			"${NAME} --vimdiff, -v  show diff between customised file and\n" \
 			"                            original file with vimdiff\n" \
 			"\n" \
-			"configuration is read from:\n ~/.${NAME}/\${pkgname} or /etc/${NAME}.d/\${pkgname}\n" \
-			"(see /etc/${NAME}.d/mplayer.example as an example)\n" \
+			"configuration is read from:\n $LOCALCONFIGDIR/\${pkgname} or $CONFIGDIR/\${pkgname}\n" \
+			"(see $CONFIGDIR/mplayer.example as an example)\n" \
 			"\n" \
 			"originally written by <wain@archlinux.fr>\n" \
 			"+ modifications by ava1ar (customizepkg-new)\n" \
@@ -99,7 +99,7 @@ modify_file()
 				fi
 				;;
 			patch)
-				if [[ -f ${pattern} ]]; then
+				if [[ -f "${pattern}" || -f "${CONFIGDIR}/${package}.files/${pattern}" ]]; then
 					echo "=> apply patch ${pattern} using '-p${context}'"
 					if grep -q '^[[:blank:]]*prepare()' "${scriptfile}"; then
 						sed -i "/^[[:blank:]]*prepare()/{n;s%$%\npatch -Np${context} -i ${pattern}%;}" "${scriptfile}"
@@ -107,7 +107,7 @@ modify_file()
 						sed -i "/^[[:blank:]]*build()/{n;s%$%\npatch -Np${context} -i ${pattern}%;}" "${scriptfile}"
 					fi
 				else
-					echo "error: file not found '${pattern}'"
+					echo "error: file not found '${pattern}'. Try putting it in ${CONFIGDIR}/${package}.files"
 				fi
 				;;
 			*)
