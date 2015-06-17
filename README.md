@@ -49,3 +49,9 @@ patch#1#file.patch
 - The context ("1" above) is the number of leading components to strip (i.e. `patch -p1`)
 - The path cannot contain variables
 - The patch file can be stored in the additional files directory, $PACKAGENAME.files
+
+You can also patch the PKGBUILD with the following syntax:
+
+```
+patch#pkgbuild#file.patch
+```
