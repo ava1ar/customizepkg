@@ -19,7 +19,7 @@ The pacman wrapper "Yaourt" integrates with customizepkg by default
 ACTION#CONTEXT#PATTERN#VALUE
 ```
 
-- Action can be: remove, removeline, add or replace
+- Action can be: remove, removeline, add, addline or replace
 - Context can be: depends, conflicts, makedepends etc.. or global for matching regexp in the whole PKGBUILD
 - Pattern can be any rexgexp
 - Value (only needed for replace) can be any string
