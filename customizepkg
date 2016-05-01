@@ -164,7 +164,7 @@ fi
 
 # use eval instead of creating a temp file to get pkgname etc
 # second grep used to filter out all variables with subshell execution like $() or ``
-eval $(grep -Po '^[[:blank:]]*_?(pkg.*|name)=[^#]*(?= *#|$)' ./PKGBUILD | grep -Ev '\$\(|`')
+eval $(grep -Pazo '[^[:print:]][[:blank:]]*_?(pkg.*|name)=(\((.|\n)*?\)|[^#]*?(?= *#|\x0a))' ./PKGBUILD | grep -Eva '\$\(|`')
 
 # copy for modification
 cp ./PKGBUILD ./PKGBUILD.custom
