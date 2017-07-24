@@ -186,6 +186,9 @@ do
 	if [ -d  "${CONFIGDIR}/${package}.files" ]; then
 		# find checksum type used in PKGBUILD and utility to calculate the sum for added files
 		checksum_context=$(grep -om 1 "^[a-z]*[0-9]*sums" "./PKGBUILD")
+		if [ -z "${checksum_context}" ]; then
+			checksum_context="sha256sums";
+		fi
 		checksum_utility=${checksum_context%?}
 		echo "=> files from ${CONFIGDIR}/${package}.files will be included into package "
 		for filepath in ${CONFIGDIR}/${package}.files/*; do
