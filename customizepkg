@@ -35,7 +35,7 @@ usage() {
 			"${NAME} --vimdiff, -v  show diff between customised file and\n" \
 			"                            original file with vimdiff\n" \
 			"\n" \
-			"configuration is read from:\n $LOCALCONFIGDIR/\${pkgname} or $XDGDIR/\${pkgname} or $GLOBALCONFIGDIR/\${pkgname} or $NAME/\${pkgname} in $XDGGLOBALDIRS\n" \
+			"configuration is read from:\n $LOCALCONFIGDIR/\${pkgname} or $XDGDIR/\${pkgname} or $GLOBALCONFIGDIR/\${pkgname} or the subdirectory $NAME/\${pkgname} in $XDGGLOBALDIRS\n" \
 			"(see $GLOBALCONFIGDIR/mplayer.example as an example)\n" \
 			"\n" \
 			"originally written by <wain@archlinux.fr>\n" \
@@ -198,7 +198,7 @@ do
 	fi
 
 	if [ ! -r "${CONFIGDIR}/${package}" ]; then
-		echo "no configuration found for ${package} in ${LOCALCONFIGDIR}/ or ${XDGDIR}/ or in a subdirectory of ${GLOBALCONFIGDIR}/"
+		echo "no configuration found for ${package} in ${LOCALCONFIGDIR}/ or ${XDGDIR}/ or ${GLOBALCONFIGDIR}/ or in the subdirectory $NAME of ${XDGGLOBALDIR}/"
 		continue
 	fi
 
