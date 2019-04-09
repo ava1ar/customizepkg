@@ -198,7 +198,7 @@ do
 	fi
 
 	if [ ! -r "${CONFIGDIR}/${package}" ]; then
-		echo "no configuration found for ${package} in ${LOCALCONFIGDIR}/ or ${XDGDIR}/ or ${GLOBALCONFIGDIR}/ or in the subdirectory $NAME of ${XDGGLOBALDIR}/"
+		echo "no configuration found for ${package} in ${LOCALCONFIGDIR}/ or ${XDGDIR}/ or ${GLOBALCONFIGDIR}/ or in the subdirectory $NAME of ${XDGGLOBALDIRS}/"
 		continue
 	fi
 
