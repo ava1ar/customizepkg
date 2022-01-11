@@ -120,10 +120,10 @@ modify_file()
 				elif [[ -f "${pattern}" || -f "${CONFIGDIR}/${package}.files/${pattern}" ]]; then
 					echo "=> apply patch ${pattern} using '-p${context}'"
 					if grep -q '^[[:blank:]]*prepare()' "${scriptfile}"; then
-						sed -i "/^[[:blank:]]*prepare()/{n;s%$%\npatch -Np${context} -i ${pattern}%;}" "${scriptfile}"
-					else
-						sed -i "/^[[:blank:]]*build()/{n;s%$%\npatch -Np${context} -i ${pattern}%;}" "${scriptfile}"
-					fi
+                                                sed -i "/^[[:blank:]]*prepare()/{n;s%$%\n  patch -Np${context} --directory=\"$pkgname-$pkgver\" < ${pattern}%;}" "${scriptfile}"
+                                        else
+                                                sed -i "/^[[:blank:]]*build()/{n;s%$%\n  patch -Np${context}  --directory=\"$pkgname-$pkgver\" < ${pattern}%;}" "${scriptfile}"
+                                        fi
 				else
 					echo "error: file not found '${pattern}'. Try putting it in ${CONFIGDIR}/${package}.files"
 				fi
