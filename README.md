@@ -45,6 +45,20 @@ Patch files can be applied to the source code using the following syntax:
 ```
 patch#1#file.patch
 ```
+In the original repo this generate a line in PKGBUILD in `prepare` function:
+
+```
+patch -Np1 -i file.patch
+```
+
+this is modified to generate:
+
+```
+patch -Np1 --directory=$pkgname-$pkgver < file.patch
+```
+this way `makepkg` descends in the `src/` directory and apply the patch `file.patch` in the `$pkgname-$pkgver` directory below.
+
+`$pkgname-$pkgver` are local variables available in the PKGBUILD.
 
 - The context ("1" above) is the number of leading components to strip (i.e. `patch -p1`)
 - The path cannot contain variables
