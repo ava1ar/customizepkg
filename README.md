@@ -58,7 +58,7 @@ patch -Np1 --directory=$pkgname-$pkgver < file.patch
 ```
 this way `makepkg` descends in the `src/` directory and apply the patch `file.patch` in the `$pkgname-$pkgver` directory below.
 
-`$pkgname-$pkgver` are local veriables available in the PKGBUILD.
+`$pkgname-$pkgver` are local variables available in the PKGBUILD.
 
 - The context ("1" above) is the number of leading components to strip (i.e. `patch -p1`)
 - The path cannot contain variables
