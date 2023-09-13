@@ -186,11 +186,10 @@ do
 	#adding new files current dir from  ${CFGDIR}/${package} folder and including them to PKGBUILD
 	if [ -d  "${CONFIGDIR}/${package}.files" ]; then
 		# find checksum type used in PKGBUILD and utility to calculate the sum for added files
-		checksum_context=$(grep -om 1 "^[a-z]*[0-9]*sums" "./PKGBUILD")
-		if [ -z "${checksum_context}" ]; then
-			checksum_context="sha256sums";
+		checksum_contexts=$(grep -o "^[a-z]*[0-9]*sums" "./PKGBUILD")
+		if [ -z "${checksum_contexts}" ]; then
+			checksum_contexts="sha256sums";
 		fi
-		checksum_utility=${checksum_context%?}
 		echo "=> files from ${CONFIGDIR}/${package}.files will be included into package "
 		for filepath in ${CONFIGDIR}/${package}.files/*; do
 			if [[ -f ${filepath} ]]; then
@@ -200,7 +199,11 @@ do
 				if [[ $? -eq 0 ]];
 					then
 						echo "add#source#${filename}" >> ./${package}.customize
-						echo "add#${checksum_context}#$(${checksum_utility} < ./${filename} | cut -d" " -f1)" >> ./${package}.customize
+						for checksum_context in $checksum_contexts
+						do
+							checksum_utility=${checksum_context%?}
+							echo "add#${checksum_context}#$(${checksum_utility} < ./${filename} | cut -d" " -f1)" >> ./${package}.customize
+						done
 						echo 'included'
 					else
 						echo 'already exists. Skipping...'
