@@ -11,6 +11,10 @@ Create config files with the same name as the package you want to modify, and pl
 variable `$CUSTOMIZEPKG_CONFIG` to change the directory customizepkg will look
 for the config files in.
 
+customizepkg will also use the xdg-standardized directories to look for config files.
+This means that you can also put your config files in `~/.config/customizepkg` or `/etc/xdg/customizepkg` or configure 
+those directories with `$XDG_CONFIG_HOME` or `$XDG_CONFIG_DIRS`
+
 The pacman wrapper "Yaourt" integrates with customizepkg by default
 
 # Configuration file Syntax: #
