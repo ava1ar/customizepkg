@@ -165,7 +165,7 @@ fi
 # use eval instead of creating a temp file to get pkgname etc
 # second grep used to filter out all variables with subshell execution like $() or ``
 # and pkgdesc variable, because multiline description breaks eval execution
-eval $(grep -Pazo '(^|[^[:print:]])[[:blank:]]*_?(pkg.*|name)=(\((.|\n)*?\)|[^#]*?(?= *#|\x0a))' ./PKGBUILD | grep -Eva '\$\(|`|pkgdesc' | tr -d '\0')
+eval $(grep -Pazo '(^|[^[:print:]])[[:blank:]]*_?(pkg.*|name)=(\((.|\n)*?\)|.*?(?=( +#)|\x0a))' ./PKGBUILD | grep -Eva '\$\(|`|pkgdesc' | tr -d '\0')
 
 # copy for modification
 cp ./PKGBUILD ./PKGBUILD.custom
