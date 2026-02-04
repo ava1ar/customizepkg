@@ -151,6 +151,7 @@ modify_file()
 ################################################
 
 MODIFY=0
+QUIET=0
 while [ "$#" -ne "0" ]; do
 	case $1 in
 		-h|--help)
@@ -159,6 +160,9 @@ while [ "$#" -ne "0" ]; do
 			;;
 		-m|--modify)
 			MODIFY=1
+			;;
+		-q|--quiet)
+			QUIET=1
 			;;
 		--vimdiff|-v)
 			[[ $(type -p vim) ]] && DIFFCMD="vim -d" || echo 'WARNING: vim was not found' 1>&2
@@ -207,7 +211,10 @@ do
 	fi
 
 	if [ ! -r "${CONFIGDIR}/${package}" ]; then
-		echo "no configuration found for ${package} in ${LOCALCONFIGDIR}/ or ${XDGDIR}/ or ${GLOBALCONFIGDIR}/ or in the subdirectory $NAME of ${XDGGLOBALDIRS}/"
+		if [ ${QUIET} -eq 0 ]; then
+			echo "no configurepkg configuration found for ${package}"
+			#echo "in ${LOCALCONFIGDIR}/ or ${XDGDIR}/ or ${GLOBALCONFIGDIR}/ or in the subdirectory $NAME of ${XDGGLOBALDIRS}/"
+		fi
 		continue
 	fi
 
