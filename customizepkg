@@ -32,6 +32,8 @@ usage() {
 			"${NAME}                shows a diff of changes that would be made\n" \
 			"${NAME} --help,    -h  shows this help\n" \
 			"${NAME} --modify,  -m  apply the modification in PKGBUILD file\n" \
+			"${NAME} --quiet,   -q  remove non-essential missing configuration mesages\n" \
+			"${NAME} --silence, -Q  silence the output entirely (still shows warnings)\n" \
 			"${NAME} --vimdiff, -v  show diff between customised file and\n" \
 			"                            original file with vimdiff\n" \
 			"\n" \
@@ -51,7 +53,7 @@ modify_file()
 
 	# if the customize file is executable, run it, then we're done.
 	if [ -x "${configfile}" ]; then
-		echo "=> ${configfile} is executable, so treating it as a script instead of config"
+		[ ${QUIET} -le 1 ] && echo "=> ${configfile} is executable, so treating it as a script instead of config"
 		"${configfile}" "${originalscriptfile}" "${scriptfile}" && return 0 || exit 1
 	fi
 
@@ -59,7 +61,7 @@ modify_file()
 	while IFS='#' read -r action context pattern value; do
 		case ${action} in
 			replace)
-				echo "=> replaces '${pattern}' with '${value}' in ${context}"
+				[ ${QUIET} -le 1 ] && echo "=> replaces '${pattern}' with '${value}' in ${context}"
 				if [ "${context}" = "global" ]; then
 					sed -i "s%${pattern}%${value}%g" "${scriptfile}"
 				else
@@ -74,7 +76,7 @@ modify_file()
 				fi
 				;;
 			remove)
-				echo "=> removes '${pattern}' from ${context}"
+				[ ${QUIET} -le 1 ] && echo "=> removes '${pattern}' from ${context}"
 				if [ "${context}" = "global" ]; then
 					sed -i "s%${pattern}%%g" "${scriptfile}"
 				else
@@ -83,7 +85,7 @@ modify_file()
 				fi
 				;;
 			removeline)
-				echo "=> remove whole line containing '${pattern}' in ${context}"
+				[ ${QUIET} -le 1 ] && echo "=> remove whole line containing '${pattern}' in ${context}"
 				if [ "${context}" = "global" ]; then
 					sed -i "/${pattern}/d" "${scriptfile}"
 				else
@@ -92,7 +94,7 @@ modify_file()
 				;;
 			add)
 				value="'${pattern//\'}'"
-				echo "=> adds ${value} in ${context}"
+				[ ${QUIET} -le 1 ] && echo "=> adds ${value} in ${context}"
 				# add the full line if it doesn't exist or just the value
 				if grep --quiet "^${context}=" "${scriptfile}"; then
 					sed -i "s%^${context}=(%&${value} %1" "${scriptfile}"
@@ -101,7 +103,7 @@ modify_file()
 				fi
 				;;
 			addline)
-				echo "=> add whole line '${value}' after ${pattern} in ${context}"
+				[ ${QUIET} -le 1 ] && echo "=> add whole line '${value}' after ${pattern} in ${context}"
 				if [ "${context}" = "global" ]; then
 					sed -i "/${pattern}/a${value}" "${scriptfile}"
 				else
@@ -111,16 +113,16 @@ modify_file()
 			patch)
 				if [ "${context}" = "pkgbuild" ]; then
 					if [[ -f "${pattern}" ]]; then
-						echo "=> apply patch ${pattern} to PKGBUILD"
+						[ ${QUIET} -le 1 ] && echo "=> apply patch ${pattern} to PKGBUILD"
 						patch -N -i "${pattern}" "${scriptfile}"
 					elif [[ -f "${CONFIGDIR}/${package}.files/${pattern}" ]]; then
-						echo "=> apply patch "${CONFIGDIR}/${package}.files/${pattern}" to PKGBUILD"
+						[ ${QUIET} -le 1 ] && echo "=> apply patch "${CONFIGDIR}/${package}.files/${pattern}" to PKGBUILD"
 						patch -N -i "${CONFIGDIR}/${package}.files/${pattern}" "${scriptfile}"
 					else
 						echo "error: file not found '${pattern}'. Try putting it in ${CONFIGDIR}/${package}.files"
 					fi
 				elif [[ -f "${pattern}" || -f "${CONFIGDIR}/${package}.files/${pattern}" ]]; then
-					echo "=> apply patch ${pattern} using '-p${context}'"
+					[ ${QUIET} -le 1 ] && echo "=> apply patch ${pattern} using '-p${context}'"
 					if grep -q '^[[:blank:]]*prepare()' "${scriptfile}"; then
 						if grep -a1 '^[[:blank:]]*prepare()' "${scriptfile}" | grep -q "cd "; then
 							sed -i "/^[[:blank:]]*prepare()/{n;s%$%\npatch -Np${context} -i \${srcdir}/${pattern}%;}" "${scriptfile}"
@@ -144,7 +146,12 @@ modify_file()
 		esac
 	done
 
-	${DIFFCMD} "${originalscriptfile}" "${scriptfile}"
+	if [ ${QUIET} -le 1 ]; then
+		${DIFFCMD} "${originalscriptfile}" "${scriptfile}"
+	else
+		${DIFFCMD} "${originalscriptfile}" "${scriptfile}" >/dev/null
+	fi
+
 	return 0
 }
 
@@ -163,6 +170,9 @@ while [ "$#" -ne "0" ]; do
 			;;
 		-q|--quiet)
 			QUIET=1
+			;;
+		-Q|--silence)
+			QUIET=2
 			;;
 		--vimdiff|-v)
 			[[ $(type -p vim) ]] && DIFFCMD="vim -d" || echo 'WARNING: vim was not found' 1>&2
@@ -228,23 +238,23 @@ do
 		if [ -z "${checksum_contexts}" ]; then
 			checksum_contexts="sha256sums";
 		fi
-		echo "=> files from ${CONFIGDIR}/${package}.files will be included into package "
+		[ ${QUIET} -le 1 ] && echo "=> files from ${CONFIGDIR}/${package}.files will be included into package "
 		for filepath in ${CONFIGDIR}/${package}.files/*; do
 			if [[ -f ${filepath} ]]; then
 				filename=$(basename ${filepath})
-				echo -e "${filename}... \c"
+				[ ${QUIET} -le 1 ] && echo -e "${filename}... \c"
 				cp "${filepath}" ./${filename} 2> /dev/null
 				if [[ $? -eq 0 ]];
 					then
-						echo "add#source#${filename}" >> ./${package}.customize
+						[ ${QUIET} -le 1 ] && echo "add#source#${filename}" >> ./${package}.customize
 						for checksum_context in $checksum_contexts
 						do
 							checksum_utility=${checksum_context%?}
-							echo "add#${checksum_context}#$(${checksum_utility} < ./${filename} | cut -d" " -f1)" >> ./${package}.customize
+							[ ${QUIET} -le 1 ] && echo "add#${checksum_context}#$(${checksum_utility} < ./${filename} | cut -d" " -f1)" >> ./${package}.customize
 						done
-						echo 'included'
+						[ ${QUIET} -le 1 ] && echo 'included'
 					else
-						echo 'already exists. Skipping...'
+						[ ${QUIET} -le 1 ] && echo 'already exists. Skipping...'
 				fi
 				if [ ${MODIFY} -eq 0 ]; then
 					rm ./${filename}
