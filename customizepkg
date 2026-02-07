@@ -223,7 +223,6 @@ do
 	if [ ! -r "${CONFIGDIR}/${package}" ]; then
 		if [ ${QUIET} -eq 0 ]; then
 			echo "no configurepkg configuration found for ${package}"
-			#echo "in ${LOCALCONFIGDIR}/ or ${XDGDIR}/ or ${GLOBALCONFIGDIR}/ or in the subdirectory $NAME of ${XDGGLOBALDIRS}/"
 		fi
 		continue
 	fi
