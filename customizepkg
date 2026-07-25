@@ -57,7 +57,7 @@ modify_file()
 		"${configfile}" "${originalscriptfile}" "${scriptfile}" && return 0 || exit 1
 	fi
 
-	grep --invert-match "\(^#\|^$\)" ${configfile} |
+	grep --invert-match "\(^#\|^$\)" "${configfile}" |
 	while IFS='#' read -r action context pattern value; do
 		case ${action} in
 			replace)
@@ -238,25 +238,25 @@ do
 			checksum_contexts="sha256sums";
 		fi
 		[ ${QUIET} -le 1 ] && echo "=> files from ${CONFIGDIR}/${package}.files will be included into package "
-		for filepath in ${CONFIGDIR}/${package}.files/*; do
+		for filepath in "${CONFIGDIR}/${package}.files/"*; do
 			if [[ -f ${filepath} ]]; then
-				filename=$(basename ${filepath})
+				filename=$(basename "${filepath}")
 				[ ${QUIET} -le 1 ] && echo -e "${filename}... \c"
-				cp "${filepath}" ./${filename} 2> /dev/null
+				cp "${filepath}" "./${filename}" 2> /dev/null
 				if [[ $? -eq 0 ]];
 					then
-						[ ${QUIET} -le 1 ] && echo "add#source#${filename}" >> ./${package}.customize
+						[ ${QUIET} -le 1 ] && echo "add#source#${filename}" >> "./${package}.customize"
 						for checksum_context in $checksum_contexts
 						do
 							checksum_utility=${checksum_context%?}
-							[ ${QUIET} -le 1 ] && echo "add#${checksum_context}#$(${checksum_utility} < ./${filename} | cut -d" " -f1)" >> ./${package}.customize
+							[ ${QUIET} -le 1 ] && echo "add#${checksum_context}#$(${checksum_utility} < "./${filename}" | cut -d" " -f1)" >> "./${package}.customize"
 						done
 						[ ${QUIET} -le 1 ] && echo 'included'
 					else
 						[ ${QUIET} -le 1 ] && echo 'already exists. Skipping...'
 				fi
 				if [ ${MODIFY} -eq 0 ]; then
-					rm ./${filename}
+					rm "./${filename}"
 				fi
 			fi
 		done
