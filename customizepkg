@@ -193,6 +193,7 @@ eval $(grep -Pazo '(^|[^[:print:]])[[:blank:]]*_?(pkg.*|name)=(\((.|\n)*?\)|.*?(
 
 # copy for modification
 cp ./PKGBUILD ./PKGBUILD.custom
+CUSTOMIZED=0
 
 for package in "${pkgname[@]}"
 do
@@ -264,12 +265,14 @@ do
 
 	# make any changes to PKGBUILD.custom
 	modify_file "./${package}.customize" "./PKGBUILD" "./PKGBUILD.custom" && rm -f "./${package}.customize" || exit 1
-	if [ ${MODIFY} -eq 1 ]; then
-		mv ./PKGBUILD ./PKGBUILD.original
-		mv ./PKGBUILD.custom ./PKGBUILD
-	else
-		rm ./PKGBUILD.custom
-	fi
+	CUSTOMIZED=1
 done
+
+if [ ${CUSTOMIZED} -eq 1 ] && [ ${MODIFY} -eq 1 ]; then
+	mv ./PKGBUILD ./PKGBUILD.original
+	mv ./PKGBUILD.custom ./PKGBUILD
+else
+	rm ./PKGBUILD.custom
+fi
 
 exit 0
