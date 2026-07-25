@@ -57,39 +57,38 @@ modify_file()
 		"${configfile}" "${originalscriptfile}" "${scriptfile}" && return 0 || exit 1
 	fi
 
-	grep --invert-match "\(^#\|^$\)" ${configfile} |
 	while IFS='#' read -r action context pattern value; do
 		case ${action} in
 			replace)
 				[ ${QUIET} -le 1 ] && echo "=> replaces '${pattern}' with '${value}' in ${context}"
 				if [ "${context}" = "global" ]; then
-					sed -i "s%${pattern}%${value}%g" "${scriptfile}"
+					sed -i "s%${pattern}%${value}%g" "${scriptfile}" || return 1
 				else
 					value="${value//\'}"
 					case ${context} in
 						prepare|build|package)
-							sed -i "/^${context}() {/,/^}$/ s%${pattern}%${value}%g" "${scriptfile}" ;; 	# multiline functions
+							sed -i "/^${context}() {/,/^}$/ s%${pattern}%${value}%g" "${scriptfile}" || return 1 ;; 	# multiline functions
 						makedepends|optdepends|depends)
 							pattern="${pattern}[<>=]*\(: \|\)[a-z0-9.{$}\-]*" ;&							# these can have version nums etc
-						*)	sed -i "/^${context}=/,/)$/ s%${pattern}%${value}%g" "${scriptfile}" ;;
+						*)	sed -i "/^${context}=/,/)$/ s%${pattern}%${value}%g" "${scriptfile}" || return 1 ;;
 					esac
 				fi
 				;;
 			remove)
 				[ ${QUIET} -le 1 ] && echo "=> removes '${pattern}' from ${context}"
 				if [ "${context}" = "global" ]; then
-					sed -i "s%${pattern}%%g" "${scriptfile}"
+					sed -i "s%${pattern}%%g" "${scriptfile}" || return 1
 				else
 					[[ ${context} =~ depends$ ]] && pattern="${pattern}[<>=]*\(: \|\)[a-z0-9.{$}\-]*"		# makedepends/optdepends/depends
-					sed -i "/^${context}=/,/)$/ s%[[:blank:]]*['\"]*${pattern}['\"]*%%g" "${scriptfile}"	# junk the quotes too
+					sed -i "/^${context}=/,/)$/ s%[[:blank:]]*['\"]*${pattern}['\"]*%%g" "${scriptfile}" || return 1	# junk the quotes too
 				fi
 				;;
 			removeline)
 				[ ${QUIET} -le 1 ] && echo "=> remove whole line containing '${pattern}' in ${context}"
 				if [ "${context}" = "global" ]; then
-					sed -i "/${pattern}/d" "${scriptfile}"
+					sed -i "/${pattern}/d" "${scriptfile}" || return 1
 				else
-					sed -i "/^${context}() {/,/}$/ { /${pattern}/d }" "${scriptfile}"
+					sed -i "/^${context}() {/,/}$/ { /${pattern}/d }" "${scriptfile}" || return 1
 				fi
 				;;
 			add)
@@ -97,54 +96,57 @@ modify_file()
 				[ ${QUIET} -le 1 ] && echo "=> adds ${value} in ${context}"
 				# add the full line if it doesn't exist or just the value
 				if grep --quiet "^${context}=" "${scriptfile}"; then
-					sed -i "s%^${context}=(%&${value} %1" "${scriptfile}"
+					sed -i "s%^${context}=(%&${value} %1" "${scriptfile}" || return 1
 				else
-					sed -i "/^pkgname/i${context}=(${value})" "${scriptfile}"
+					sed -i "/^pkgname/i${context}=(${value})" "${scriptfile}" || return 1
 				fi
 				;;
 			addline)
 				[ ${QUIET} -le 1 ] && echo "=> add whole line '${value}' after ${pattern} in ${context}"
 				if [ "${context}" = "global" ]; then
-					sed -i "/${pattern}/a${value}" "${scriptfile}"
+					sed -i "/${pattern}/a${value}" "${scriptfile}" || return 1
 				else
-					sed -i "/^${context}() {/,/^}$/ s%${pattern}.*$%&\n${value}%" "${scriptfile}"
+					sed -i "/^${context}() {/,/^}$/ s%${pattern}.*$%&\n${value}%" "${scriptfile}" || return 1
 				fi
 				;;
 			patch)
 				if [ "${context}" = "pkgbuild" ]; then
 					if [[ -f "${pattern}" ]]; then
 						[ ${QUIET} -le 1 ] && echo "=> apply patch ${pattern} to PKGBUILD"
-						patch -N -i "${pattern}" "${scriptfile}"
+						patch -N -i "${pattern}" "${scriptfile}" || return 1
 					elif [[ -f "${CONFIGDIR}/${package}.files/${pattern}" ]]; then
 						[ ${QUIET} -le 1 ] && echo "=> apply patch "${CONFIGDIR}/${package}.files/${pattern}" to PKGBUILD"
-						patch -N -i "${CONFIGDIR}/${package}.files/${pattern}" "${scriptfile}"
+						patch -N -i "${CONFIGDIR}/${package}.files/${pattern}" "${scriptfile}" || return 1
 					else
-						echo "error: file not found '${pattern}'. Try putting it in ${CONFIGDIR}/${package}.files"
+						echo "error: file not found '${pattern}'. Try putting it in ${CONFIGDIR}/${package}.files" 1>&2
+						return 1
 					fi
 				elif [[ -f "${pattern}" || -f "${CONFIGDIR}/${package}.files/${pattern}" ]]; then
 					[ ${QUIET} -le 1 ] && echo "=> apply patch ${pattern} using '-p${context}'"
 					if grep -q '^[[:blank:]]*prepare()' "${scriptfile}"; then
 						if grep -a1 '^[[:blank:]]*prepare()' "${scriptfile}" | grep -q "cd "; then
-							sed -i "/^[[:blank:]]*prepare()/{n;s%$%\npatch -Np${context} -i \${srcdir}/${pattern}%;}" "${scriptfile}"
+							sed -i "/^[[:blank:]]*prepare()/{n;s%$%\npatch -Np${context} -i \${srcdir}/${pattern}%;}" "${scriptfile}" || return 1
 						else
-							sed -i "/^[[:blank:]]*prepare()/{s%$%\npatch -Np${context} -i \${srcdir}/${pattern}%;}" "${scriptfile}"
+							sed -i "/^[[:blank:]]*prepare()/{s%$%\npatch -Np${context} -i \${srcdir}/${pattern}%;}" "${scriptfile}" || return 1
 						fi
 					else
 						if grep -a1 '^[[:blank:]]*build()' "${scriptfile}" | grep -q "cd "; then
-							sed -i "/^[[:blank:]]*build()/{n;s%$%\npatch -Np${context} -i \${srcdir}/${pattern}%;}" "${scriptfile}"
+							sed -i "/^[[:blank:]]*build()/{n;s%$%\npatch -Np${context} -i \${srcdir}/${pattern}%;}" "${scriptfile}" || return 1
 						else
-							sed -i "/^[[:blank:]]*build()/{s%$%\npatch -Np${context} -i \${srcdir}/${pattern}%;}" "${scriptfile}"
+							sed -i "/^[[:blank:]]*build()/{s%$%\npatch -Np${context} -i \${srcdir}/${pattern}%;}" "${scriptfile}" || return 1
 						fi
 					fi
 				else
-					echo "error: file not found '${pattern}'. Try putting it in ${CONFIGDIR}/${package}.files"
+					echo "error: file not found '${pattern}'. Try putting it in ${CONFIGDIR}/${package}.files" 1>&2
+					return 1
 				fi
 				;;
 			*)
 				echo "error: unknown action '${action}'" 1>&2
+				return 1
 				;;
 		esac
-	done
+	done < <(grep --invert-match "\(^#\|^$\)" ${configfile})
 
 	if [ ${QUIET} -le 1 ]; then
 		${DIFFCMD} "${originalscriptfile}" "${scriptfile}"
